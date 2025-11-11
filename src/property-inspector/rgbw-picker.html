@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>RGBW Color Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .color-picker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px;
+        }
+        .color-preview {
+            width: 100%;
+            height: 60px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background: rgb(255, 255, 255);
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-label {
+            min-width: 60px;
+            font-weight: bold;
+        }
+        .slider {
+            flex: 1;
+        }
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+        }
+        .preset-colors {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .preset-color {
+            width: 100%;
+            height: 40px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .preset-color:hover {
+            opacity: 0.8;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="color-picker-container">
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Device IP Address</div>
+                <input class="sdpi-item-value" type="text" id="device-ip" placeholder="192.168.1.100" />
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Component ID</div>
+                <input class="sdpi-item-value" type="number" id="component-id" value="0" min="0" max="3" />
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Color Preview</div>
+                <div class="color-preview" id="color-preview"></div>
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">HTML5 Color Picker</div>
+                <input class="sdpi-item-value" type="color" id="html5-color" value="#ffffff" />
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-row">
+                    <span class="slider-label">Red:</span>
+                    <input type="range" class="slider" id="red-slider" min="0" max="255" value="255" />
+                    <span class="slider-value" id="red-value">255</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">Green:</span>
+                    <input type="range" class="slider" id="green-slider" min="0" max="255" value="255" />
+                    <span class="slider-value" id="green-value">255</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">Blue:</span>
+                    <input type="range" class="slider" id="blue-slider" min="0" max="255" value="255" />
+                    <span class="slider-value" id="blue-value">255</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">White:</span>
+                    <input type="range" class="slider" id="white-slider" min="0" max="255" value="255" />
+                    <span class="slider-value" id="white-value">255</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">Brightness:</span>
+                    <input type="range" class="slider" id="brightness-slider" min="0" max="100" value="100" />
+                    <span class="slider-value" id="brightness-value">100%</span>
+                </div>
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Preset Colors</div>
+                <div class="preset-colors" id="preset-colors">
+                    <div class="preset-color" style="background: rgb(255, 0, 0);" data-rgbw="255,0,0,0"></div>
+                    <div class="preset-color" style="background: rgb(0, 255, 0);" data-rgbw="0,255,0,0"></div>
+                    <div class="preset-color" style="background: rgb(0, 0, 255);" data-rgbw="0,0,255,0"></div>
+                    <div class="preset-color" style="background: rgb(255, 255, 255);" data-rgbw="255,255,255,255"></div>
+                    <div class="preset-color" style="background: rgb(255, 165, 0);" data-rgbw="255,165,0,0"></div>
+                    <div class="preset-color" style="background: rgb(255, 192, 203);" data-rgbw="255,192,203,0"></div>
+                    <div class="preset-color" style="background: rgb(128, 0, 128);" data-rgbw="128,0,128,0"></div>
+                    <div class="preset-color" style="background: rgb(255, 255, 0);" data-rgbw="255,255,0,0"></div>
+                </div>
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Icon Color</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input class="sdpi-item-value" type="color" id="icon-color" value="#ffffff" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
+                    <input class="sdpi-item-value" type="text" id="icon-color-text" value="#ffffff" placeholder="#ffffff" style="flex: 1;" />
+                </div>
+            </div>
+
+            <div class="sdpi-item">
+                <div class="sdpi-item-label">Background Color</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input class="sdpi-item-value" type="color" id="background-color" value="#000000" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
+                    <input class="sdpi-item-value" type="text" id="background-color-text" value="#000000" placeholder="#000000" style="flex: 1;" />
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="apply-color">Apply Color</button>
+                <button class="btn-secondary" id="save-preset">Save as Preset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let settings = {};
+        let websocket = null;
+
+        const updateColorPreview = () => {
+            const red = parseInt($('red-slider').value) || 0;
+            const green = parseInt($('green-slider').value) || 0;
+            const blue = parseInt($('blue-slider').value) || 0;
+            const white = parseInt($('white-slider').value) || 0;
+            const brightness = parseInt($('brightness-slider').value) || 100;
+
+            // Update preview (mix RGB with white based on brightness)
+            const preview = $('color-preview');
+            preview.style.background = `rgb(${red}, ${green}, ${blue})`;
+            preview.style.opacity = brightness / 100;
+
+            // Update HTML5 color picker
+            const hex = rgbToHex(red, green, blue);
+            $('html5-color').value = hex;
+        };
+
+        const rgbToHex = (r, g, b) => {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        };
+
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        };
+
+        const updateSliderValues = () => {
+            $('red-value').textContent = $('red-slider').value;
+            $('green-value').textContent = $('green-slider').value;
+            $('blue-value').textContent = $('blue-slider').value;
+            $('white-value').textContent = $('white-slider').value;
+            $('brightness-value').textContent = $('brightness-slider').value + '%';
+        };
+
+        const loadSettings = () => {
+            if (settings.devices && settings.devices.length > 0) {
+                const device = settings.devices[0];
+                $('device-ip').value = device.ip || '';
+                $('component-id').value = device.componentId || 0;
+            }
+            if (settings.rgbwColor) {
+                $('red-slider').value = settings.rgbwColor.red || 255;
+                $('green-slider').value = settings.rgbwColor.green || 255;
+                $('blue-slider').value = settings.rgbwColor.blue || 255;
+                $('white-slider').value = settings.rgbwColor.white || 255;
+                $('brightness-slider').value = settings.rgbwColor.brightness || 100;
+                updateColorPreview();
+                updateSliderValues();
+            }
+            if (settings.iconColor) {
+                $('icon-color').value = settings.iconColor;
+                $('icon-color-text').value = settings.iconColor;
+            }
+            if (settings.backgroundColor) {
+                $('background-color').value = settings.backgroundColor;
+                $('background-color-text').value = settings.backgroundColor;
+            }
+        };
+
+        const saveSettings = () => {
+            if (!settings.devices) {
+                settings.devices = [];
+            }
+            if (settings.devices.length === 0) {
+                settings.devices.push({
+                    ip: $('device-ip').value,
+                    deviceType: 'shelly-plus-rgbw-pm',
+                    componentId: parseInt($('component-id').value) || 0,
+                });
+            } else {
+                settings.devices[0] = {
+                    ip: $('device-ip').value,
+                    deviceType: 'shelly-plus-rgbw-pm',
+                    componentId: parseInt($('component-id').value) || 0,
+                };
+            }
+            settings.rgbwColor = {
+                red: parseInt($('red-slider').value) || 0,
+                green: parseInt($('green-slider').value) || 0,
+                blue: parseInt($('blue-slider').value) || 0,
+                white: parseInt($('white-slider').value) || 0,
+                brightness: parseInt($('brightness-slider').value) || 100,
+            };
+            settings.iconColor = $('icon-color').value || '#ffffff';
+            settings.backgroundColor = $('background-color').value || '#000000';
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                const json = {
+                    event: 'setSettings',
+                    context: window.location.search.split('=')[1],
+                    payload: settings,
+                };
+                websocket.send(JSON.stringify(json));
+            }
+        };
+
+        const applyColor = async () => {
+            const ip = $('device-ip').value;
+            const componentId = parseInt($('component-id').value) || 0;
+            const red = parseInt($('red-slider').value) || 0;
+            const green = parseInt($('green-slider').value) || 0;
+            const blue = parseInt($('blue-slider').value) || 0;
+            const white = parseInt($('white-slider').value) || 0;
+            const brightness = parseInt($('brightness-slider').value) || 100;
+
+            if (!ip) {
+                alert('Please enter a device IP address');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://${ip}/rpc/Light.Set`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: componentId,
+                        red,
+                        green,
+                        blue,
+                        white,
+                        brightness,
+                    }),
+                });
+
+                if (response.ok) {
+                    saveSettings();
+                    alert('Color applied successfully!');
+                } else {
+                    alert('Failed to apply color');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+
+        // Event listeners
+        ['red-slider', 'green-slider', 'blue-slider', 'white-slider', 'brightness-slider'].forEach(id => {
+            $(id).addEventListener('input', () => {
+                updateColorPreview();
+                updateSliderValues();
+            });
+        });
+
+        $('html5-color').addEventListener('input', (e) => {
+            const rgb = hexToRgb(e.target.value);
+            if (rgb) {
+                $('red-slider').value = rgb.r;
+                $('green-slider').value = rgb.g;
+                $('blue-slider').value = rgb.b;
+                updateColorPreview();
+                updateSliderValues();
+            }
+        });
+
+        $('device-ip').addEventListener('change', saveSettings);
+        $('component-id').addEventListener('change', saveSettings);
+        $('apply-color').addEventListener('click', applyColor);
+        
+        // Icon color sync
+        $('icon-color').addEventListener('input', (e) => {
+            $('icon-color-text').value = e.target.value;
+            saveSettings();
+        });
+        $('icon-color-text').addEventListener('change', (e) => {
+            const value = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                $('icon-color').value = value;
+                saveSettings();
+            }
+        });
+        
+        // Background color sync
+        $('background-color').addEventListener('input', (e) => {
+            $('background-color-text').value = e.target.value;
+            saveSettings();
+        });
+        $('background-color-text').addEventListener('change', (e) => {
+            const value = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                $('background-color').value = value;
+                saveSettings();
+            }
+        });
+        $('save-preset').addEventListener('click', () => {
+            // Save current color as preset (could extend to save to settings)
+            alert('Preset saved! (Feature can be extended to save multiple presets)');
+        });
+
+        // Preset color clicks
+        document.querySelectorAll('.preset-color').forEach(preset => {
+            preset.addEventListener('click', () => {
+                const rgbw = preset.getAttribute('data-rgbw').split(',');
+                $('red-slider').value = parseInt(rgbw[0]);
+                $('green-slider').value = parseInt(rgbw[1]);
+                $('blue-slider').value = parseInt(rgbw[2]);
+                $('white-slider').value = parseInt(rgbw[3]);
+                updateColorPreview();
+                updateSliderValues();
+            });
+        });
+
+        // WebSocket connection (simplified - actual implementation would use Stream Deck SDK)
+        const params = new URLSearchParams(window.location.search);
+        const port = params.get('port');
+        const uuid = params.get('uuid');
+
+        if (port && uuid) {
+            websocket = new WebSocket(`ws://localhost:${port}`);
+            websocket.onopen = () => {
+                websocket.send(JSON.stringify({
+                    event: 'propertyInspectorDidAppear',
+                    uuid,
+                }));
+            };
+            websocket.onmessage = (evt) => {
+                const jsonObj = JSON.parse(evt.data);
+                if (jsonObj.event === 'didReceiveSettings') {
+                    settings = jsonObj.payload.settings || {};
+                    loadSettings();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
+

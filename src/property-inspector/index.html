@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Shelly Device Configuration</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Device IP Address</div>
+            <input class="sdpi-item-value" type="text" id="device-ip" placeholder="192.168.1.100" />
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Device Type</div>
+            <select class="sdpi-item-value select" id="device-type">
+                <option value="shelly-plus-1">Shelly Plus 1</option>
+                <option value="shelly-plus-rgbw-pm">Shelly Plus RGBW PM</option>
+            </select>
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Component ID</div>
+            <input class="sdpi-item-value" type="number" id="component-id" value="0" min="0" max="3" />
+        </div>
+
+        <div class="sdpi-item" id="brightness-control" style="display: none;">
+            <div class="sdpi-item-label">Brightness</div>
+            <input class="sdpi-item-value" type="range" id="brightness" min="0" max="100" value="50" />
+            <div class="sdpi-item-value" id="brightness-value">50%</div>
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Polling Interval (ms)</div>
+            <input class="sdpi-item-value" type="number" id="polling-interval" value="5000" min="1000" step="1000" />
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Icon Color</div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input class="sdpi-item-value" type="color" id="icon-color" value="#ffffff" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
+                <input class="sdpi-item-value" type="text" id="icon-color-text" value="#ffffff" placeholder="#ffffff" style="flex: 1;" />
+            </div>
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Background Color</div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input class="sdpi-item-value" type="color" id="background-color" value="#000000" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
+                <input class="sdpi-item-value" type="text" id="background-color-text" value="#000000" placeholder="#000000" style="flex: 1;" />
+            </div>
+        </div>
+
+        <div class="sdpi-item">
+            <button class="sdpi-item-value" id="test-connection">Test Connection</button>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let websocket = null;
+        let settings = {};
+        let uuid = null;
+
+        // Get parameters from URL
+        const params = new URLSearchParams(window.location.search);
+        const port = params.get('port');
+        uuid = params.get('uuid');
+
+        if (port && uuid) {
+            websocket = new WebSocket(`ws://localhost:${port}`);
+            
+            websocket.onopen = () => {
+                const json = {
+                    event: 'propertyInspectorDidAppear',
+                    uuid,
+                };
+                websocket.send(JSON.stringify(json));
+            };
+
+            websocket.onmessage = (evt) => {
+                const jsonObj = JSON.parse(evt.data);
+                if (jsonObj.event === 'didReceiveSettings') {
+                    settings = jsonObj.payload.settings || {};
+                    loadSettings();
+                } else if (jsonObj.event === 'sendToPropertyInspector') {
+                    const payload = jsonObj.payload;
+                    if (payload.devices) {
+                        settings.devices = payload.devices;
+                        loadSettings();
+                    }
+                }
+            };
+        }
+
+            const loadSettings = () => {
+                if (settings.devices && settings.devices.length > 0) {
+                    const device = settings.devices[0];
+                    $('device-ip').value = device.ip || '';
+                    $('device-type').value = device.deviceType || 'shelly-plus-1';
+                    $('component-id').value = device.componentId || 0;
+                }
+                if (settings.brightness !== undefined) {
+                    $('brightness').value = settings.brightness;
+                    $('brightness-value').textContent = settings.brightness + '%';
+                }
+                if (settings.pollingInterval !== undefined) {
+                    $('polling-interval').value = settings.pollingInterval;
+                }
+                if (settings.iconColor) {
+                    $('icon-color').value = settings.iconColor;
+                    $('icon-color-text').value = settings.iconColor;
+                }
+                if (settings.backgroundColor) {
+                    $('background-color').value = settings.backgroundColor;
+                    $('background-color-text').value = settings.backgroundColor;
+                }
+                updateUI();
+            };
+
+            const saveSettings = () => {
+                if (!settings.devices) {
+                    settings.devices = [];
+                }
+                if (settings.devices.length === 0) {
+                    settings.devices.push({
+                        ip: $('device-ip').value,
+                        deviceType: $('device-type').value,
+                        componentId: parseInt($('component-id').value) || 0,
+                    });
+                } else {
+                    settings.devices[0] = {
+                        ip: $('device-ip').value,
+                        deviceType: $('device-type').value,
+                        componentId: parseInt($('component-id').value) || 0,
+                    };
+                }
+                settings.brightness = parseInt($('brightness').value) || 50;
+                settings.pollingInterval = parseInt($('polling-interval').value) || 5000;
+                settings.iconColor = $('icon-color').value || '#ffffff';
+                settings.backgroundColor = $('background-color').value || '#000000';
+
+                if (websocket && websocket.readyState === WebSocket.OPEN && uuid) {
+                    const json = {
+                        event: 'setSettings',
+                        context: uuid,
+                        payload: settings,
+                    };
+                    websocket.send(JSON.stringify(json));
+                }
+            };
+
+            const updateUI = () => {
+                const deviceType = $('device-type').value;
+                if (deviceType === 'shelly-plus-rgbw-pm') {
+                    $('brightness-control').style.display = 'block';
+                } else {
+                    $('brightness-control').style.display = 'none';
+                }
+            };
+
+            $('device-ip').addEventListener('change', saveSettings);
+            $('device-type').addEventListener('change', () => {
+                updateUI();
+                saveSettings();
+            });
+            $('component-id').addEventListener('change', saveSettings);
+            $('brightness').addEventListener('input', () => {
+                $('brightness-value').textContent = $('brightness').value + '%';
+                saveSettings();
+            });
+            $('polling-interval').addEventListener('change', saveSettings);
+            
+            // Icon color sync
+            $('icon-color').addEventListener('input', (e) => {
+                $('icon-color-text').value = e.target.value;
+                saveSettings();
+            });
+            $('icon-color-text').addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (/^#[0-9A-F]{6}$/i.test(value)) {
+                    $('icon-color').value = value;
+                    saveSettings();
+                }
+            });
+            
+            // Background color sync
+            $('background-color').addEventListener('input', (e) => {
+                $('background-color-text').value = e.target.value;
+                saveSettings();
+            });
+            $('background-color-text').addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (/^#[0-9A-F]{6}$/i.test(value)) {
+                    $('background-color').value = value;
+                    saveSettings();
+                }
+            });
+
+            $('test-connection').addEventListener('click', async () => {
+                const ip = $('device-ip').value;
+                if (!ip) {
+                    alert('Please enter a device IP address');
+                    return;
+                }
+                try {
+                    const response = await fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(`Connected! Device: ${data.model || 'Unknown'}`);
+                    } else {
+                        alert('Connection failed');
+                    }
+                } catch (error) {
+                    alert('Connection failed: ' + error.message);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
+
