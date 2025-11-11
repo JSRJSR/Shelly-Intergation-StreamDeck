@@ -25,6 +25,8 @@ export interface ActionSettings {
   // Visual customization
   iconColor?: string; // Hex color for icon (e.g., "#ffffff")
   backgroundColor?: string; // Hex color for background (e.g., "#007bff")
+  // Index signature to satisfy JsonObject constraint
+  [key: string]: any;
 }
 
 export interface ShellyStatus {
@@ -37,5 +39,7 @@ export interface ShellyStatus {
   green?: number;
   blue?: number;
   white?: number;
+  // Index signature to satisfy JsonObject constraint
+  [key: string]: any;
 }
 

@@ -9,7 +9,7 @@ export function detectDeviceType(ip: string): Promise<'shelly-plus-1' | 'shelly-
   // Try to get device info from Shelly API
   return fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`)
     .then(response => response.json())
-    .then(data => {
+    .then((data: any) => {
       const model = data?.model || '';
       if (model.includes('Plus1')) {
         return 'shelly-plus-1';

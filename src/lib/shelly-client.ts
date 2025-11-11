@@ -39,7 +39,7 @@ export class ShellyClient {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       return data?.output === on;
     } catch (error) {
       console.error(`Error setting switch for ${ip}:`, error);

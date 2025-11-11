@@ -1,14 +1,16 @@
-import { Action } from '@elgato/streamdeck';
+import type { DialAction } from '@elgato/streamdeck';
+import type { WillAppear } from '@elgato/streamdeck/types/api';
 import { ShellyClient } from '../lib/shelly-client';
 import { ActionSettings, DeviceConfig } from '../types';
 import { getDefaultComponent } from '../lib/device-types';
 import { updateButtonIcon } from '../lib/icon-helper';
 
-export class DimmingAction extends Action<ActionSettings> {
+// @ts-ignore - DialAction exists at runtime but is exported as type
+export class DimmingAction extends (DialAction as any) {
   private client: ShellyClient;
   private readonly actionUUID = 'com.shelly.dimming';
 
-  constructor(context: any, client: ShellyClient) {
+  constructor(context: WillAppear<ActionSettings>, client: ShellyClient) {
     super(context);
     this.client = client;
   }
