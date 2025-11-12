@@ -1,15 +1,18 @@
 {
   "Name": "Shelly Integration",
-  "Version": "1.0.0",
+  "UUID": "com.shelly",
+  "Version": "1.0.0.0",
   "Author": "",
   "CodePath": "bin/plugin.js",
   "Description": "Control Shelly Plus 1 and Shelly Plus RGBW PM devices from your Stream Deck",
-  "Icon": "imgs/icon.png",
+  "Icon": "imgs/icon",
   "URL": "https://github.com",
   "SDKVersion": 2,
   "Software": {
-    "MinimumVersion": "6.0"
+    "MinimumVersion": "6.4"
   },
+  "Category": "Shelly Integration",
+  "CategoryIcon": "imgs/icon",
   "OS": [
     {
       "Platform": "windows",
@@ -24,89 +27,89 @@
     {
       "Name": "Toggle",
       "UUID": "com.shelly.toggle",
-      "Icon": "imgs/actions/toggle.png",
+      "Icon": "imgs/actions/toggle",
       "Tooltip": "Toggle Shelly device on/off",
       "PropertyInspectorPath": "ui/index.html",
       "States": [
         {
-          "Image": "imgs/actions/toggle-off.png",
+          "Image": "imgs/actions/toggle-off",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         },
         {
-          "Image": "imgs/actions/toggle-on.png",
+          "Image": "imgs/actions/toggle-on",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     },
     {
       "Name": "Turn On",
       "UUID": "com.shelly.on",
-      "Icon": "imgs/actions/on.png",
+      "Icon": "imgs/actions/on",
       "Tooltip": "Turn Shelly device on",
       "PropertyInspectorPath": "ui/index.html",
       "States": [
         {
-          "Image": "imgs/actions/on.png",
+          "Image": "imgs/actions/on",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     },
     {
       "Name": "Turn Off",
       "UUID": "com.shelly.off",
-      "Icon": "imgs/actions/off.png",
+      "Icon": "imgs/actions/off",
       "Tooltip": "Turn Shelly device off",
       "PropertyInspectorPath": "ui/index.html",
       "States": [
         {
-          "Image": "imgs/actions/off.png",
+          "Image": "imgs/actions/off",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     },
     {
       "Name": "Dimming",
       "UUID": "com.shelly.dimming",
-      "Icon": "imgs/actions/dimming.png",
+      "Icon": "imgs/actions/dimming",
       "Tooltip": "Control brightness/dimming",
       "PropertyInspectorPath": "ui/index.html",
       "States": [
         {
-          "Image": "imgs/actions/dimming.png",
+          "Image": "imgs/actions/dimming",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     },
     {
       "Name": "RGBW Color",
       "UUID": "com.shelly.rgbw",
-      "Icon": "imgs/actions/rgbw.png",
+      "Icon": "imgs/actions/rgbw",
       "Tooltip": "Control RGBW color",
       "PropertyInspectorPath": "ui/rgbw-picker.html",
       "States": [
         {
-          "Image": "imgs/actions/rgbw.png",
+          "Image": "imgs/actions/rgbw",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     },
     {
       "Name": "Status",
       "UUID": "com.shelly.status",
-      "Icon": "imgs/actions/status.png",
+      "Icon": "imgs/actions/status",
       "Tooltip": "Display device status",
       "PropertyInspectorPath": "ui/index.html",
       "States": [
         {
-          "Image": "imgs/actions/status.png",
+          "Image": "imgs/actions/status",
           "TitleAlignment": "middle",
-          "FontSize": "16"
+          "FontSize": 16
         }
       ]
     }

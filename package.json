@@ -4,12 +4,13 @@
   "description": "Stream Deck plugin for controlling Shelly Plus 1 and Shelly Plus RGBW PM devices",
   "main": "dist/plugin.js",
   "scripts": {
-    "build": "tsc && npm run copy-assets-first",
-    "watch": "concurrently \"tsc --watch\" \"onchange dist/**/*.js -- npm run copy-assets && streamdeck restart com.shelly\"",
+    "build": "tsc && npm run bundle && npm run copy-assets-first",
+    "bundle": "node scripts/bundle.js",
+    "watch": "concurrently \"tsc --watch\" \"onchange dist/plugin.js -- npm run bundle && npm run copy-assets && streamdeck restart com.shelly\"",
     "copy-assets-first": "node scripts/copy-assets.js",
     "copy-assets": "node scripts/copy-assets.js",
     "generate-icons": "node scripts/generate-icons.js",
-    "package": "streamdeck package"
+    "package": "node scripts/package.js"
   },
   "keywords": [
     "streamdeck",
@@ -22,13 +23,14 @@
   "devDependencies": {
     "@elgato/streamdeck": "^2.0.0-beta.1",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
+    "archiver": "^7.0.1",
     "axios": "^1.6.0",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.27.0",
     "onchange": "^7.1.0",
-    "concurrently": "^8.2.2"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "sharp": "^0.33.0"
   }
 }
-

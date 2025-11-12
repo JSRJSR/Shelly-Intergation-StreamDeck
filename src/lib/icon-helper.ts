@@ -25,8 +25,8 @@ export async function updateButtonIcon(
     // For toggle action, use state-specific icons
     if (actionUUID === 'com.shelly.toggle' && state !== undefined) {
       const stateIcons = [
-        'assets/actions/toggle-off.png',
-        'assets/actions/toggle-on.png'
+        'imgs/actions/toggle-off.png',
+        'imgs/actions/toggle-on.png'
       ];
       if (stateIcons[state]) {
         const coloredIcon = await generateColoredIcon(

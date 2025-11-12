@@ -15,11 +15,14 @@ export async function generateColoredIcon(
   backgroundColor?: string
 ): Promise<string> {
   try {
-    // Resolve icon path relative to project root
-    const projectRoot = path.resolve(__dirname, '../..');
-    const fullIconPath = path.isAbsolute(iconPath) 
-      ? iconPath 
-      : path.join(projectRoot, iconPath);
+    // Resolve icon path relative to plugin root
+    // When bundled, __dirname points to bin/, so plugin root is one level up
+    const pluginRoot = path.resolve(__dirname, '..');
+    // Convert 'assets/actions/...' paths to 'imgs/actions/...' for plugin structure
+    const pluginIconPath = iconPath.replace(/^assets\//, 'imgs/');
+    const fullIconPath = path.isAbsolute(pluginIconPath) 
+      ? pluginIconPath 
+      : path.join(pluginRoot, pluginIconPath);
 
     if (!fs.existsSync(fullIconPath)) {
       // Return original path if icon doesn't exist
@@ -94,13 +97,13 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
  */
 export function getActionIconPath(actionUUID: string): string {
   const iconMap: Record<string, string> = {
-    'com.shelly.toggle': 'assets/actions/toggle.png',
-    'com.shelly.on': 'assets/actions/on.png',
-    'com.shelly.off': 'assets/actions/off.png',
-    'com.shelly.dimming': 'assets/actions/dimming.png',
-    'com.shelly.rgbw': 'assets/actions/rgbw.png',
-    'com.shelly.status': 'assets/actions/status.png',
+    'com.shelly.toggle': 'imgs/actions/toggle.png',
+    'com.shelly.on': 'imgs/actions/on.png',
+    'com.shelly.off': 'imgs/actions/off.png',
+    'com.shelly.dimming': 'imgs/actions/dimming.png',
+    'com.shelly.rgbw': 'imgs/actions/rgbw.png',
+    'com.shelly.status': 'imgs/actions/status.png',
   };
-  return iconMap[actionUUID] || 'assets/icon.png';
+  return iconMap[actionUUID] || 'imgs/icon.png';
 }
 
