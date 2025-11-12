@@ -58,165 +58,319 @@
     </div>
 
     <script>
-        const $ = (id) => document.getElementById(id);
-        let websocket = null;
-        let settings = {};
-        let uuid = null;
-
-        // Get parameters from URL
-        const params = new URLSearchParams(window.location.search);
-        const port = params.get('port');
-        uuid = params.get('uuid');
-
-        if (port && uuid) {
-            websocket = new WebSocket(`ws://localhost:${port}`);
+        (function() {
+            'use strict';
             
-            websocket.onopen = () => {
-                const json = {
-                    event: 'propertyInspectorDidAppear',
-                    uuid,
-                };
-                websocket.send(JSON.stringify(json));
-            };
+            const $ = (id) => document.getElementById(id);
+            let websocket = null;
+            let settings = {};
+            let uuid = null;
+            let actionInfo = null;
+            let saveTimeout = null;
 
-            websocket.onmessage = (evt) => {
-                const jsonObj = JSON.parse(evt.data);
-                if (jsonObj.event === 'didReceiveSettings') {
-                    settings = jsonObj.payload.settings || {};
-                    loadSettings();
-                } else if (jsonObj.event === 'sendToPropertyInspector') {
-                    const payload = jsonObj.payload;
-                    if (payload.devices) {
-                        settings.devices = payload.devices;
-                        loadSettings();
-                    }
-                }
-            };
-        }
+            // Get parameters from URL
+            const params = new URLSearchParams(window.location.search);
+            const port = params.get('port');
+            uuid = params.get('uuid');
+            const registerEvent = params.get('registerEvent');
+            const info = params.get('info');
 
             const loadSettings = () => {
-                if (settings.devices && settings.devices.length > 0) {
-                    const device = settings.devices[0];
-                    $('device-ip').value = device.ip || '';
-                    $('device-type').value = device.deviceType || 'shelly-plus-1';
-                    $('component-id').value = device.componentId || 0;
+                try {
+                    // Always load device settings, even if devices array is empty
+                    if (settings.devices && settings.devices.length > 0) {
+                        const device = settings.devices[0];
+                        if ($('device-ip')) $('device-ip').value = device.ip || '';
+                        if ($('device-type')) $('device-type').value = device.deviceType || 'shelly-plus-1';
+                        if ($('component-id')) $('component-id').value = device.componentId || 0;
+                    } else {
+                        // If no devices, initialize with empty values but don't overwrite user input
+                        // Only set defaults if fields are truly empty
+                        if ($('device-ip') && !$('device-ip').value) {
+                            $('device-ip').value = '';
+                        }
+                        if ($('device-type') && !$('device-type').value) {
+                            $('device-type').value = 'shelly-plus-1';
+                        }
+                        if ($('component-id') && !$('component-id').value) {
+                            $('component-id').value = 0;
+                        }
+                    }
+                    if (settings.brightness !== undefined && $('brightness')) {
+                        $('brightness').value = settings.brightness;
+                        if ($('brightness-value')) $('brightness-value').textContent = settings.brightness + '%';
+                    }
+                    if (settings.pollingInterval !== undefined && $('polling-interval')) {
+                        $('polling-interval').value = settings.pollingInterval;
+                    }
+                    if (settings.iconColor && $('icon-color')) {
+                        $('icon-color').value = settings.iconColor;
+                        if ($('icon-color-text')) $('icon-color-text').value = settings.iconColor;
+                    }
+                    if (settings.backgroundColor && $('background-color')) {
+                        $('background-color').value = settings.backgroundColor;
+                        if ($('background-color-text')) $('background-color-text').value = settings.backgroundColor;
+                    }
+                    updateUI();
+                } catch (error) {
+                    console.error('Error loading settings:', error);
                 }
-                if (settings.brightness !== undefined) {
-                    $('brightness').value = settings.brightness;
-                    $('brightness-value').textContent = settings.brightness + '%';
-                }
-                if (settings.pollingInterval !== undefined) {
-                    $('polling-interval').value = settings.pollingInterval;
-                }
-                if (settings.iconColor) {
-                    $('icon-color').value = settings.iconColor;
-                    $('icon-color-text').value = settings.iconColor;
-                }
-                if (settings.backgroundColor) {
-                    $('background-color').value = settings.backgroundColor;
-                    $('background-color-text').value = settings.backgroundColor;
-                }
-                updateUI();
             };
 
-            const saveSettings = () => {
-                if (!settings.devices) {
-                    settings.devices = [];
-                }
-                if (settings.devices.length === 0) {
-                    settings.devices.push({
-                        ip: $('device-ip').value,
-                        deviceType: $('device-type').value,
-                        componentId: parseInt($('component-id').value) || 0,
-                    });
-                } else {
-                    settings.devices[0] = {
-                        ip: $('device-ip').value,
-                        deviceType: $('device-type').value,
-                        componentId: parseInt($('component-id').value) || 0,
-                    };
-                }
-                settings.brightness = parseInt($('brightness').value) || 50;
-                settings.pollingInterval = parseInt($('polling-interval').value) || 5000;
-                settings.iconColor = $('icon-color').value || '#ffffff';
-                settings.backgroundColor = $('background-color').value || '#000000';
+            const saveSettings = (immediate = false) => {
+                try {
+                    // Clear any pending save
+                    if (saveTimeout) {
+                        clearTimeout(saveTimeout);
+                        saveTimeout = null;
+                    }
 
-                if (websocket && websocket.readyState === WebSocket.OPEN && uuid) {
-                    const json = {
-                        event: 'setSettings',
-                        context: uuid,
-                        payload: settings,
+                    const doSave = () => {
+                        if (!settings.devices) {
+                            settings.devices = [];
+                        }
+                        
+                        const ip = $('device-ip') ? $('device-ip').value.trim() : '';
+                        const deviceType = $('device-type') ? $('device-type').value : 'shelly-plus-1';
+                        const componentId = $('component-id') ? parseInt($('component-id').value) || 0 : 0;
+                        
+                        // Always update device settings, even if IP is empty
+                        if (settings.devices.length === 0) {
+                            settings.devices.push({
+                                ip: ip,
+                                deviceType: deviceType,
+                                componentId: componentId,
+                            });
+                        } else {
+                            settings.devices[0] = {
+                                ip: ip,
+                                deviceType: deviceType,
+                                componentId: componentId,
+                            };
+                        }
+                        
+                        if ($('brightness')) {
+                            settings.brightness = parseInt($('brightness').value) || 50;
+                        }
+                        if ($('polling-interval')) {
+                            settings.pollingInterval = parseInt($('polling-interval').value) || 5000;
+                        }
+                        if ($('icon-color')) {
+                            settings.iconColor = $('icon-color').value || '#ffffff';
+                        }
+                        if ($('background-color')) {
+                            settings.backgroundColor = $('background-color').value || '#000000';
+                        }
+
+                        // Try to send settings, retry if WebSocket isn't ready
+                        if (websocket && websocket.readyState === WebSocket.OPEN && uuid) {
+                            const json = {
+                                event: 'setSettings',
+                                context: uuid,
+                                payload: settings,
+                            };
+                            websocket.send(JSON.stringify(json));
+                            console.log('Settings saved:', settings);
+                        } else {
+                            console.warn('WebSocket not ready, settings will be saved when connection is established');
+                            // Store settings locally so they can be sent when WebSocket connects
+                        }
                     };
-                    websocket.send(JSON.stringify(json));
+
+                    if (immediate) {
+                        doSave();
+                    } else {
+                        // Debounce saves for input events (wait 500ms after last keystroke)
+                        saveTimeout = setTimeout(doSave, 500);
+                    }
+                } catch (error) {
+                    console.error('Error saving settings:', error);
                 }
             };
 
             const updateUI = () => {
-                const deviceType = $('device-type').value;
-                if (deviceType === 'shelly-plus-rgbw-pm') {
-                    $('brightness-control').style.display = 'block';
-                } else {
-                    $('brightness-control').style.display = 'none';
+                try {
+                    if (!$('device-type') || !$('brightness-control')) return;
+                    const deviceType = $('device-type').value;
+                    if (deviceType === 'shelly-plus-rgbw-pm') {
+                        $('brightness-control').style.display = 'block';
+                    } else {
+                        $('brightness-control').style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error updating UI:', error);
                 }
             };
 
-            $('device-ip').addEventListener('change', saveSettings);
-            $('device-type').addEventListener('change', () => {
-                updateUI();
-                saveSettings();
-            });
-            $('component-id').addEventListener('change', saveSettings);
-            $('brightness').addEventListener('input', () => {
-                $('brightness-value').textContent = $('brightness').value + '%';
-                saveSettings();
-            });
-            $('polling-interval').addEventListener('change', saveSettings);
-            
-            // Icon color sync
-            $('icon-color').addEventListener('input', (e) => {
-                $('icon-color-text').value = e.target.value;
-                saveSettings();
-            });
-            $('icon-color-text').addEventListener('change', (e) => {
-                const value = e.target.value;
-                if (/^#[0-9A-F]{6}$/i.test(value)) {
-                    $('icon-color').value = value;
-                    saveSettings();
-                }
-            });
-            
-            // Background color sync
-            $('background-color').addEventListener('input', (e) => {
-                $('background-color-text').value = e.target.value;
-                saveSettings();
-            });
-            $('background-color-text').addEventListener('change', (e) => {
-                const value = e.target.value;
-                if (/^#[0-9A-F]{6}$/i.test(value)) {
-                    $('background-color').value = value;
-                    saveSettings();
-                }
-            });
-
-            $('test-connection').addEventListener('click', async () => {
-                const ip = $('device-ip').value;
-                if (!ip) {
-                    alert('Please enter a device IP address');
-                    return;
-                }
+            const setupEventListeners = () => {
                 try {
-                    const response = await fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        alert(`Connected! Device: ${data.model || 'Unknown'}`);
-                    } else {
-                        alert('Connection failed');
+                    // Initialize UI state first
+                    updateUI();
+                    
+                    if ($('device-ip')) {
+                        $('device-ip').addEventListener('change', () => saveSettings(true));
+                        $('device-ip').addEventListener('blur', () => saveSettings(true));
+                        $('device-ip').addEventListener('input', () => saveSettings(false));
+                    }
+                    if ($('device-type')) {
+                        $('device-type').addEventListener('change', () => {
+                            updateUI();
+                            saveSettings(true);
+                        });
+                    }
+                    if ($('component-id')) {
+                        $('component-id').addEventListener('change', () => saveSettings(true));
+                        $('component-id').addEventListener('blur', () => saveSettings(true));
+                        $('component-id').addEventListener('input', () => saveSettings(false));
+                    }
+                    if ($('brightness')) {
+                        $('brightness').addEventListener('input', () => {
+                            if ($('brightness-value')) $('brightness-value').textContent = $('brightness').value + '%';
+                            saveSettings();
+                        });
+                    }
+                    if ($('polling-interval')) {
+                        $('polling-interval').addEventListener('change', () => saveSettings(true));
+                        $('polling-interval').addEventListener('blur', () => saveSettings(true));
+                        $('polling-interval').addEventListener('input', () => saveSettings(false));
+                    }
+                    
+                    // Icon color sync
+                    if ($('icon-color')) {
+                        $('icon-color').addEventListener('input', (e) => {
+                            if ($('icon-color-text')) $('icon-color-text').value = e.target.value;
+                            saveSettings();
+                        });
+                    }
+                    if ($('icon-color-text')) {
+                        $('icon-color-text').addEventListener('change', (e) => {
+                            const value = e.target.value;
+                            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                                if ($('icon-color')) $('icon-color').value = value;
+                                saveSettings();
+                            }
+                        });
+                        $('icon-color-text').addEventListener('blur', (e) => {
+                            const value = e.target.value;
+                            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                                if ($('icon-color')) $('icon-color').value = value;
+                                saveSettings();
+                            }
+                        });
+                    }
+                    
+                    // Background color sync
+                    if ($('background-color')) {
+                        $('background-color').addEventListener('input', (e) => {
+                            if ($('background-color-text')) $('background-color-text').value = e.target.value;
+                            saveSettings();
+                        });
+                    }
+                    if ($('background-color-text')) {
+                        $('background-color-text').addEventListener('change', (e) => {
+                            const value = e.target.value;
+                            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                                if ($('background-color')) $('background-color').value = value;
+                                saveSettings();
+                            }
+                        });
+                        $('background-color-text').addEventListener('blur', (e) => {
+                            const value = e.target.value;
+                            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                                if ($('background-color')) $('background-color').value = value;
+                                saveSettings();
+                            }
+                        });
+                    }
+
+                    if ($('test-connection')) {
+                        $('test-connection').addEventListener('click', async () => {
+                            const ip = $('device-ip') ? $('device-ip').value : '';
+                            if (!ip) {
+                                alert('Please enter a device IP address');
+                                return;
+                            }
+                            try {
+                                const response = await fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`);
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    alert(`Connected! Device: ${data.model || 'Unknown'}`);
+                                } else {
+                                    alert('Connection failed');
+                                }
+                            } catch (error) {
+                                alert('Connection failed: ' + error.message);
+                            }
+                        });
                     }
                 } catch (error) {
-                    alert('Connection failed: ' + error.message);
+                    console.error('Error setting up event listeners:', error);
                 }
-            });
-        };
+            };
+
+            // Set up WebSocket connection
+            const connectElgatoStreamDeckSocket = (inPort, inUUID, inRegisterEvent, inInfo, inActionInfo) => {
+                uuid = inUUID;
+                actionInfo = JSON.parse(inActionInfo || '{}');
+                const infoObj = JSON.parse(inInfo || '{}');
+
+                websocket = new WebSocket(`ws://localhost:${inPort}`);
+                
+                websocket.onopen = () => {
+                    const json = {
+                        event: inRegisterEvent,
+                        uuid: inUUID
+                    };
+                    websocket.send(JSON.stringify(json));
+                    
+                    // Save any pending settings now that WebSocket is ready
+                    if (settings.devices && settings.devices.length > 0) {
+                        saveSettings(true);
+                    }
+                };
+
+                websocket.onmessage = (evt) => {
+                    try {
+                        const jsonObj = JSON.parse(evt.data);
+                        if (jsonObj.event === 'didReceiveSettings') {
+                            settings = jsonObj.payload.settings || {};
+                            loadSettings();
+                        } else if (jsonObj.event === 'sendToPropertyInspector') {
+                            const payload = jsonObj.payload;
+                            if (payload.devices) {
+                                settings.devices = payload.devices;
+                                loadSettings();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing WebSocket message:', error);
+                    }
+                };
+
+                websocket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+
+                websocket.onclose = () => {
+                    console.log('WebSocket closed');
+                };
+            };
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setupEventListeners();
+                    if (port && uuid) {
+                        connectElgatoStreamDeckSocket(port, uuid, registerEvent || 'propertyInspectorDidAppear', info, null);
+                    }
+                });
+            } else {
+                setupEventListeners();
+                if (port && uuid) {
+                    connectElgatoStreamDeckSocket(port, uuid, registerEvent || 'propertyInspectorDidAppear', info, null);
+                }
+            }
+        })();
     </script>
 </body>
 </html>

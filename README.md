@@ -1,5 +1,16 @@
 # Shelly Stream Deck Plugin
 
+```bash
+streamdeck unlink com.shelly
+streamdeck link com.shelly.sdPlugin
+streamdeck restart com.shelly
+```
+
+**Development Setup Commands:**
+- `streamdeck unlink com.shelly` - Removes any existing linked plugin with the old identifier to avoid conflicts
+- `streamdeck link com.shelly.sdPlugin` - Links the plugin directory to Stream Deck for development, enabling hot-reload and live testing
+- `streamdeck restart com.shelly` - Restarts the plugin in Stream Deck to apply the changes
+
 A Stream Deck plugin for controlling Shelly Plus 1 and Shelly Plus RGBW PM devices over your local network.
 
 ## Features
