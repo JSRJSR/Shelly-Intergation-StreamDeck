@@ -1,32 +1,30 @@
-export interface DeviceConfig {
-  ip: string;
-  deviceType: 'shelly-plus-1' | 'shelly-plus-rgbw-pm';
-  componentId?: number;
-  componentType?: 'switch' | 'light';
-}
-
-export interface RGBWColor {
-  red: number;
-  green: number;
-  blue: number;
-  white: number;
-  brightness?: number;
-}
-
-export interface ActionSettings {
-  devices: DeviceConfig[];
-  // RGBW specific settings
-  rgbwColor?: RGBWColor;
-  presetColors?: RGBWColor[];
-  // Dimming settings
-  brightness?: number;
-  // Status settings
-  pollingInterval?: number;
-  // Visual customization
-  iconColor?: string; // Hex color for icon (e.g., "#ffffff")
-  backgroundColor?: string; // Hex color for background (e.g., "#007bff")
+// Simplified settings for Toggle Action
+export interface ToggleActionSettings {
+  ipAddress: string;           // Device IP (e.g., "192.168.1.100")
+  deviceGeneration?: 'gen1' | 'gen2' | 'auto'; // Auto-detect or manual (default: 'auto')
+  deviceType?: string;          // Optional: Device model (auto-detected if not set)
+  componentId: number;         // Component/Relay ID (default: 0, range: 0-3)
+  pollingInterval: number;     // Status polling interval in ms (default: 5000, min: 1000)
+  // Optional customizations:
+  buttonTitle?: string;        // Custom button title (shown instead of status if set)
+  showStatus: boolean;         // Show ON/OFF text on button (default: true)
+  onStateImage?: string;       // Custom image path for ON state (optional)
+  offStateImage?: string;      // Custom image path for OFF state (optional)
   // Index signature to satisfy JsonObject constraint
   [key: string]: any;
+}
+
+// Legacy interface for backward compatibility (will be removed)
+export interface ActionSettings extends ToggleActionSettings {
+  devices?: any[]; // Deprecated - use ipAddress directly
+}
+
+// Minimal interface for StatusPoller (not used by Toggle action)
+export interface DeviceConfig {
+  ip: string;
+  deviceType?: string;
+  componentId?: number;
+  componentType?: 'switch' | 'light';
 }
 
 export interface ShellyStatus {

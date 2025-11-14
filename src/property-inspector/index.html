@@ -2,21 +2,21 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Shelly Device Configuration</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Shelly Toggle Configuration</title>
 </head>
 <body>
     <div class="sdpi-wrapper">
         <div class="sdpi-item">
-            <div class="sdpi-item-label">Device IP Address</div>
-            <input class="sdpi-item-value" type="text" id="device-ip" placeholder="192.168.1.100" />
+            <div class="sdpi-item-label">IP Address</div>
+            <input class="sdpi-item-value" type="text" id="ip-address" placeholder="192.168.1.100" />
         </div>
 
         <div class="sdpi-item">
-            <div class="sdpi-item-label">Device Type</div>
-            <select class="sdpi-item-value select" id="device-type">
-                <option value="shelly-plus-1">Shelly Plus 1</option>
-                <option value="shelly-plus-rgbw-pm">Shelly Plus RGBW PM</option>
+            <div class="sdpi-item-label">Device Generation</div>
+            <select class="sdpi-item-value select" id="device-generation">
+                <option value="auto">Auto-detect</option>
+                <option value="gen1">Gen1</option>
+                <option value="gen2">Gen2</option>
             </select>
         </div>
 
@@ -25,31 +25,29 @@
             <input class="sdpi-item-value" type="number" id="component-id" value="0" min="0" max="3" />
         </div>
 
-        <div class="sdpi-item" id="brightness-control" style="display: none;">
-            <div class="sdpi-item-label">Brightness</div>
-            <input class="sdpi-item-value" type="range" id="brightness" min="0" max="100" value="50" />
-            <div class="sdpi-item-value" id="brightness-value">50%</div>
-        </div>
-
         <div class="sdpi-item">
             <div class="sdpi-item-label">Polling Interval (ms)</div>
             <input class="sdpi-item-value" type="number" id="polling-interval" value="5000" min="1000" step="1000" />
         </div>
 
         <div class="sdpi-item">
-            <div class="sdpi-item-label">Icon Color</div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input class="sdpi-item-value" type="color" id="icon-color" value="#ffffff" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
-                <input class="sdpi-item-value" type="text" id="icon-color-text" value="#ffffff" placeholder="#ffffff" style="flex: 1;" />
-            </div>
+            <div class="sdpi-item-label">Button Title</div>
+            <input class="sdpi-item-value" type="text" id="button-title" placeholder="Custom title (optional)" />
         </div>
 
         <div class="sdpi-item">
-            <div class="sdpi-item-label">Background Color</div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input class="sdpi-item-value" type="color" id="background-color" value="#000000" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
-                <input class="sdpi-item-value" type="text" id="background-color-text" value="#000000" placeholder="#000000" style="flex: 1;" />
-            </div>
+            <div class="sdpi-item-label">Show Status Text</div>
+            <input class="sdpi-item-value" type="checkbox" id="show-status" checked />
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">ON State Image</div>
+            <input class="sdpi-item-value" type="text" id="on-state-image" placeholder="Path to ON image (optional)" />
+        </div>
+
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">OFF State Image</div>
+            <input class="sdpi-item-value" type="text" id="off-state-image" placeholder="Path to OFF image (optional)" />
         </div>
 
         <div class="sdpi-item">
@@ -65,10 +63,7 @@
             let websocket = null;
             let settings = {};
             let uuid = null;
-            let actionInfo = null;
-            let saveTimeout = null;
 
-            // Get parameters from URL
             const params = new URLSearchParams(window.location.search);
             const port = params.get('port');
             uuid = params.get('uuid');
@@ -77,227 +72,107 @@
 
             const loadSettings = () => {
                 try {
-                    // Always load device settings, even if devices array is empty
-                    if (settings.devices && settings.devices.length > 0) {
-                        const device = settings.devices[0];
-                        if ($('device-ip')) $('device-ip').value = device.ip || '';
-                        if ($('device-type')) $('device-type').value = device.deviceType || 'shelly-plus-1';
-                        if ($('component-id')) $('component-id').value = device.componentId || 0;
-                    } else {
-                        // If no devices, initialize with empty values but don't overwrite user input
-                        // Only set defaults if fields are truly empty
-                        if ($('device-ip') && !$('device-ip').value) {
-                            $('device-ip').value = '';
-                        }
-                        if ($('device-type') && !$('device-type').value) {
-                            $('device-type').value = 'shelly-plus-1';
-                        }
-                        if ($('component-id') && !$('component-id').value) {
-                            $('component-id').value = 0;
-                        }
-                    }
-                    if (settings.brightness !== undefined && $('brightness')) {
-                        $('brightness').value = settings.brightness;
-                        if ($('brightness-value')) $('brightness-value').textContent = settings.brightness + '%';
-                    }
-                    if (settings.pollingInterval !== undefined && $('polling-interval')) {
-                        $('polling-interval').value = settings.pollingInterval;
-                    }
-                    if (settings.iconColor && $('icon-color')) {
-                        $('icon-color').value = settings.iconColor;
-                        if ($('icon-color-text')) $('icon-color-text').value = settings.iconColor;
-                    }
-                    if (settings.backgroundColor && $('background-color')) {
-                        $('background-color').value = settings.backgroundColor;
-                        if ($('background-color-text')) $('background-color-text').value = settings.backgroundColor;
-                    }
-                    updateUI();
+                    if ($('ip-address')) $('ip-address').value = settings.ipAddress || '';
+                    if ($('device-generation')) $('device-generation').value = settings.deviceGeneration || 'auto';
+                    if ($('component-id')) $('component-id').value = settings.componentId !== undefined ? settings.componentId : 0;
+                    if ($('polling-interval')) $('polling-interval').value = settings.pollingInterval !== undefined ? settings.pollingInterval : 5000;
+                    if ($('button-title')) $('button-title').value = settings.buttonTitle || '';
+                    if ($('show-status')) $('show-status').checked = settings.showStatus !== undefined ? settings.showStatus : true;
+                    if ($('on-state-image')) $('on-state-image').value = settings.onStateImage || '';
+                    if ($('off-state-image')) $('off-state-image').value = settings.offStateImage || '';
                 } catch (error) {
                     console.error('Error loading settings:', error);
                 }
             };
 
-            const saveSettings = (immediate = false) => {
+            const saveSettings = () => {
                 try {
-                    // Clear any pending save
-                    if (saveTimeout) {
-                        clearTimeout(saveTimeout);
-                        saveTimeout = null;
+                    // Build settings object from form fields
+                    settings.ipAddress = $('ip-address') ? $('ip-address').value.trim() : '';
+                    settings.deviceGeneration = $('device-generation') ? $('device-generation').value : 'auto';
+                    settings.componentId = $('component-id') ? parseInt($('component-id').value) || 0 : 0;
+                    settings.pollingInterval = $('polling-interval') ? parseInt($('polling-interval').value) || 5000 : 5000;
+                    settings.showStatus = $('show-status') ? $('show-status').checked : true;
+                    
+                    // Optional fields - delete if empty
+                    const buttonTitle = $('button-title') ? $('button-title').value.trim() : '';
+                    if (buttonTitle) {
+                        settings.buttonTitle = buttonTitle;
+                    } else {
+                        delete settings.buttonTitle;
+                    }
+                    
+                    const onStateImage = $('on-state-image') ? $('on-state-image').value.trim() : '';
+                    if (onStateImage) {
+                        settings.onStateImage = onStateImage;
+                    } else {
+                        delete settings.onStateImage;
+                    }
+                    
+                    const offStateImage = $('off-state-image') ? $('off-state-image').value.trim() : '';
+                    if (offStateImage) {
+                        settings.offStateImage = offStateImage;
+                    } else {
+                        delete settings.offStateImage;
                     }
 
-                    const doSave = () => {
-                        if (!settings.devices) {
-                            settings.devices = [];
-                        }
-                        
-                        const ip = $('device-ip') ? $('device-ip').value.trim() : '';
-                        const deviceType = $('device-type') ? $('device-type').value : 'shelly-plus-1';
-                        const componentId = $('component-id') ? parseInt($('component-id').value) || 0 : 0;
-                        
-                        // Always update device settings, even if IP is empty
-                        if (settings.devices.length === 0) {
-                            settings.devices.push({
-                                ip: ip,
-                                deviceType: deviceType,
-                                componentId: componentId,
-                            });
-                        } else {
-                            settings.devices[0] = {
-                                ip: ip,
-                                deviceType: deviceType,
-                                componentId: componentId,
-                            };
-                        }
-                        
-                        if ($('brightness')) {
-                            settings.brightness = parseInt($('brightness').value) || 50;
-                        }
-                        if ($('polling-interval')) {
-                            settings.pollingInterval = parseInt($('polling-interval').value) || 5000;
-                        }
-                        if ($('icon-color')) {
-                            settings.iconColor = $('icon-color').value || '#ffffff';
-                        }
-                        if ($('background-color')) {
-                            settings.backgroundColor = $('background-color').value || '#000000';
-                        }
-
-                        // Try to send settings, retry if WebSocket isn't ready
-                        if (websocket && websocket.readyState === WebSocket.OPEN && uuid) {
-                            const json = {
-                                event: 'setSettings',
-                                context: uuid,
-                                payload: settings,
-                            };
-                            websocket.send(JSON.stringify(json));
-                            console.log('Settings saved:', settings);
-                        } else {
-                            console.warn('WebSocket not ready, settings will be saved when connection is established');
-                            // Store settings locally so they can be sent when WebSocket connects
-                        }
-                    };
-
-                    if (immediate) {
-                        doSave();
+                    // Send settings immediately if WebSocket is ready
+                    if (websocket && websocket.readyState === WebSocket.OPEN && uuid) {
+                        const json = {
+                            event: 'setSettings',
+                            context: uuid,
+                            payload: settings,
+                        };
+                        websocket.send(JSON.stringify(json));
+                        console.log('Settings saved:', settings);
                     } else {
-                        // Debounce saves for input events (wait 500ms after last keystroke)
-                        saveTimeout = setTimeout(doSave, 500);
+                        console.warn('Settings not saved - WebSocket not ready. State:', websocket ? websocket.readyState : 'null', 'UUID:', uuid);
                     }
                 } catch (error) {
                     console.error('Error saving settings:', error);
                 }
             };
 
-            const updateUI = () => {
-                try {
-                    if (!$('device-type') || !$('brightness-control')) return;
-                    const deviceType = $('device-type').value;
-                    if (deviceType === 'shelly-plus-rgbw-pm') {
-                        $('brightness-control').style.display = 'block';
-                    } else {
-                        $('brightness-control').style.display = 'none';
-                    }
-                } catch (error) {
-                    console.error('Error updating UI:', error);
-                }
-            };
-
             const setupEventListeners = () => {
                 try {
-                    // Initialize UI state first
-                    updateUI();
+                    const inputs = ['ip-address', 'device-generation', 'component-id', 'polling-interval', 
+                                   'button-title', 'show-status', 
+                                   'on-state-image', 'off-state-image'];
                     
-                    if ($('device-ip')) {
-                        $('device-ip').addEventListener('change', () => saveSettings(true));
-                        $('device-ip').addEventListener('blur', () => saveSettings(true));
-                        $('device-ip').addEventListener('input', () => saveSettings(false));
-                    }
-                    if ($('device-type')) {
-                        $('device-type').addEventListener('change', () => {
-                            updateUI();
-                            saveSettings(true);
-                        });
-                    }
-                    if ($('component-id')) {
-                        $('component-id').addEventListener('change', () => saveSettings(true));
-                        $('component-id').addEventListener('blur', () => saveSettings(true));
-                        $('component-id').addEventListener('input', () => saveSettings(false));
-                    }
-                    if ($('brightness')) {
-                        $('brightness').addEventListener('input', () => {
-                            if ($('brightness-value')) $('brightness-value').textContent = $('brightness').value + '%';
-                            saveSettings();
-                        });
-                    }
-                    if ($('polling-interval')) {
-                        $('polling-interval').addEventListener('change', () => saveSettings(true));
-                        $('polling-interval').addEventListener('blur', () => saveSettings(true));
-                        $('polling-interval').addEventListener('input', () => saveSettings(false));
-                    }
-                    
-                    // Icon color sync
-                    if ($('icon-color')) {
-                        $('icon-color').addEventListener('input', (e) => {
-                            if ($('icon-color-text')) $('icon-color-text').value = e.target.value;
-                            saveSettings();
-                        });
-                    }
-                    if ($('icon-color-text')) {
-                        $('icon-color-text').addEventListener('change', (e) => {
-                            const value = e.target.value;
-                            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                                if ($('icon-color')) $('icon-color').value = value;
-                                saveSettings();
+                    inputs.forEach(id => {
+                        const element = $(id);
+                        if (element) {
+                            // Save immediately on all change events
+                            element.addEventListener('change', () => saveSettings());
+                            element.addEventListener('blur', () => saveSettings());
+                            // Also save on input events for immediate feedback (especially for text fields)
+                            if (element.type !== 'checkbox') {
+                                element.addEventListener('input', () => saveSettings());
                             }
-                        });
-                        $('icon-color-text').addEventListener('blur', (e) => {
-                            const value = e.target.value;
-                            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                                if ($('icon-color')) $('icon-color').value = value;
-                                saveSettings();
-                            }
-                        });
-                    }
-                    
-                    // Background color sync
-                    if ($('background-color')) {
-                        $('background-color').addEventListener('input', (e) => {
-                            if ($('background-color-text')) $('background-color-text').value = e.target.value;
-                            saveSettings();
-                        });
-                    }
-                    if ($('background-color-text')) {
-                        $('background-color-text').addEventListener('change', (e) => {
-                            const value = e.target.value;
-                            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                                if ($('background-color')) $('background-color').value = value;
-                                saveSettings();
-                            }
-                        });
-                        $('background-color-text').addEventListener('blur', (e) => {
-                            const value = e.target.value;
-                            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                                if ($('background-color')) $('background-color').value = value;
-                                saveSettings();
-                            }
-                        });
-                    }
+                        }
+                    });
 
                     if ($('test-connection')) {
                         $('test-connection').addEventListener('click', async () => {
-                            const ip = $('device-ip') ? $('device-ip').value : '';
+                            const ip = $('ip-address') ? $('ip-address').value : '';
                             if (!ip) {
-                                alert('Please enter a device IP address');
+                                alert('Please enter an IP address');
                                 return;
                             }
                             try {
-                                const response = await fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`);
+                                let response = await fetch(`http://${ip}/rpc/Shelly.GetDeviceInfo`);
                                 if (response.ok) {
                                     const data = await response.json();
-                                    alert(`Connected! Device: ${data.model || 'Unknown'}`);
-                                } else {
-                                    alert('Connection failed');
+                                    alert(`Connected! Device: ${data.model || 'Unknown'} (Gen2)`);
+                                    return;
                                 }
+                                response = await fetch(`http://${ip}/shelly`);
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    alert(`Connected! Device: ${data.type || 'Unknown'} (Gen1)`);
+                                    return;
+                                }
+                                alert('Connection failed');
                             } catch (error) {
                                 alert('Connection failed: ' + error.message);
                             }
@@ -308,25 +183,25 @@
                 }
             };
 
-            // Set up WebSocket connection
             const connectElgatoStreamDeckSocket = (inPort, inUUID, inRegisterEvent, inInfo, inActionInfo) => {
                 uuid = inUUID;
-                actionInfo = JSON.parse(inActionInfo || '{}');
-                const infoObj = JSON.parse(inInfo || '{}');
 
                 websocket = new WebSocket(`ws://localhost:${inPort}`);
                 
                 websocket.onopen = () => {
+                    console.log('WebSocket connected');
                     const json = {
                         event: inRegisterEvent,
                         uuid: inUUID
                     };
                     websocket.send(JSON.stringify(json));
                     
-                    // Save any pending settings now that WebSocket is ready
-                    if (settings.devices && settings.devices.length > 0) {
-                        saveSettings(true);
-                    }
+                    // Request current settings
+                    const getSettingsJson = {
+                        event: 'getSettings',
+                        context: inUUID
+                    };
+                    websocket.send(JSON.stringify(getSettingsJson));
                 };
 
                 websocket.onmessage = (evt) => {
@@ -335,12 +210,7 @@
                         if (jsonObj.event === 'didReceiveSettings') {
                             settings = jsonObj.payload.settings || {};
                             loadSettings();
-                        } else if (jsonObj.event === 'sendToPropertyInspector') {
-                            const payload = jsonObj.payload;
-                            if (payload.devices) {
-                                settings.devices = payload.devices;
-                                loadSettings();
-                            }
+                            console.log('Settings loaded:', settings);
                         }
                     } catch (error) {
                         console.error('Error processing WebSocket message:', error);
@@ -351,12 +221,25 @@
                     console.error('WebSocket error:', error);
                 };
 
-                websocket.onclose = () => {
-                    console.log('WebSocket closed');
+                websocket.onclose = (event) => {
+                    console.log('WebSocket closed', event.code, event.reason);
+                    // Attempt to save settings one last time before closing
+                    saveSettings();
                 };
             };
 
-            // Initialize when DOM is ready
+            // Save settings when property inspector is about to close
+            window.addEventListener('beforeunload', () => {
+                saveSettings();
+            });
+
+            // Save settings when property inspector loses visibility (backup)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    saveSettings();
+                }
+            });
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
                     setupEventListeners();
@@ -374,4 +257,3 @@
     </script>
 </body>
 </html>
-

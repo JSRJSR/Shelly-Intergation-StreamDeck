@@ -1,30 +1,49 @@
 import streamDeck from '@elgato/streamdeck';
 import { ShellyClient } from './lib/shelly-client';
-import { StatusPoller } from './lib/status-poller';
 import { ToggleAction } from './actions/toggle-action';
-import { OnAction } from './actions/on-action';
-import { OffAction } from './actions/off-action';
-import { DimmingAction } from './actions/dimming-action';
-import { RGBWColorAction } from './actions/rgbw-color-action';
-import { StatusAction } from './actions/status-action';
+import { TestGen1LightAction } from './actions/test-gen1-light-action';
 
-const client = new ShellyClient();
-const poller = new StatusPoller(client);
+// Catch any uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('[ShellyPlugin] UNCAUGHT EXCEPTION:', error);
+  console.error('[ShellyPlugin] Stack:', error.stack);
+});
 
-// Register actions - using factory pattern (may not match SDK 2.0 exactly but works at runtime)
-// @ts-ignore - registerAction expects SingletonAction but we're using factory pattern
-(streamDeck.actions as any).registerAction('com.shelly.toggle', (context: any) => new ToggleAction(context, client));
-// @ts-ignore
-(streamDeck.actions as any).registerAction('com.shelly.on', (context: any) => new OnAction(context, client));
-// @ts-ignore
-(streamDeck.actions as any).registerAction('com.shelly.off', (context: any) => new OffAction(context, client));
-// @ts-ignore
-(streamDeck.actions as any).registerAction('com.shelly.dimming', (context: any) => new DimmingAction(context, client));
-// @ts-ignore
-(streamDeck.actions as any).registerAction('com.shelly.rgbw', (context: any) => new RGBWColorAction(context, client));
-// @ts-ignore
-(streamDeck.actions as any).registerAction('com.shelly.status', (context: any) => new StatusAction(context, client, poller));
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ShellyPlugin] UNHANDLED REJECTION:', reason);
+  console.error('[ShellyPlugin] Promise:', promise);
+});
 
-// Connect to Stream Deck
-streamDeck.connect();
+console.log('[ShellyPlugin] Starting plugin initialization...');
+console.log('[ShellyPlugin] Process args:', process.argv);
+console.log('[ShellyPlugin] Working directory:', process.cwd());
+
+try {
+  const client = new ShellyClient();
+  console.log('[ShellyPlugin] ShellyClient created');
+
+  // Register Toggle action
+  console.log('[ShellyPlugin] Registering ToggleAction...');
+  streamDeck.actions.registerAction(new ToggleAction(client));
+  console.log('[ShellyPlugin] ToggleAction registered');
+
+  // Register Test Gen1 Light action
+  console.log('[ShellyPlugin] Registering TestGen1LightAction...');
+  streamDeck.actions.registerAction(new TestGen1LightAction(client));
+  console.log('[ShellyPlugin] TestGen1LightAction registered');
+
+  // Connect to Stream Deck
+  console.log('[ShellyPlugin] Connecting to Stream Deck...');
+  streamDeck.connect();
+  console.log('[ShellyPlugin] Connection initiated');
+} catch (error) {
+  console.error('[ShellyPlugin] FATAL ERROR during initialization:', error);
+  console.error('[ShellyPlugin] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+  // Try to connect anyway - might still work
+  try {
+    streamDeck.connect();
+  } catch (connectError) {
+    console.error('[ShellyPlugin] Failed to connect:', connectError);
+  }
+}
 

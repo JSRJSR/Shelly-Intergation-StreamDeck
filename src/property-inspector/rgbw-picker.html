@@ -3,80 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>RGBW Color Control</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .color-picker-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding: 10px;
-        }
-        .color-preview {
-            width: 100%;
-            height: 60px;
-            border: 2px solid #333;
-            border-radius: 5px;
-            background: rgb(255, 255, 255);
-        }
-        .slider-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .slider-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .slider-label {
-            min-width: 60px;
-            font-weight: bold;
-        }
-        .slider {
-            flex: 1;
-        }
-        .slider-value {
-            min-width: 50px;
-            text-align: right;
-        }
-        .preset-colors {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .preset-color {
-            width: 100%;
-            height: 40px;
-            border: 2px solid #333;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .preset-color:hover {
-            opacity: 0.8;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        button {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-    </style>
 </head>
 <body>
     <div class="sdpi-wrapper">
@@ -143,21 +69,6 @@
                 </div>
             </div>
 
-            <div class="sdpi-item">
-                <div class="sdpi-item-label">Icon Color</div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input class="sdpi-item-value" type="color" id="icon-color" value="#ffffff" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
-                    <input class="sdpi-item-value" type="text" id="icon-color-text" value="#ffffff" placeholder="#ffffff" style="flex: 1;" />
-                </div>
-            </div>
-
-            <div class="sdpi-item">
-                <div class="sdpi-item-label">Background Color</div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input class="sdpi-item-value" type="color" id="background-color" value="#000000" style="width: 60px; height: 40px; padding: 2px; cursor: pointer;" />
-                    <input class="sdpi-item-value" type="text" id="background-color-text" value="#000000" placeholder="#000000" style="flex: 1;" />
-                </div>
-            </div>
 
             <div class="button-group">
                 <button class="btn-primary" id="apply-color">Apply Color</button>
@@ -227,14 +138,6 @@
                 updateColorPreview();
                 updateSliderValues();
             }
-            if (settings.iconColor) {
-                $('icon-color').value = settings.iconColor;
-                $('icon-color-text').value = settings.iconColor;
-            }
-            if (settings.backgroundColor) {
-                $('background-color').value = settings.backgroundColor;
-                $('background-color-text').value = settings.backgroundColor;
-            }
         };
 
         const saveSettings = () => {
@@ -261,8 +164,6 @@
                 white: parseInt($('white-slider').value) || 0,
                 brightness: parseInt($('brightness-slider').value) || 100,
             };
-            settings.iconColor = $('icon-color').value || '#ffffff';
-            settings.backgroundColor = $('background-color').value || '#000000';
 
             if (websocket && websocket.readyState === WebSocket.OPEN) {
                 const json = {
@@ -337,32 +238,6 @@
         $('device-ip').addEventListener('change', saveSettings);
         $('component-id').addEventListener('change', saveSettings);
         $('apply-color').addEventListener('click', applyColor);
-        
-        // Icon color sync
-        $('icon-color').addEventListener('input', (e) => {
-            $('icon-color-text').value = e.target.value;
-            saveSettings();
-        });
-        $('icon-color-text').addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                $('icon-color').value = value;
-                saveSettings();
-            }
-        });
-        
-        // Background color sync
-        $('background-color').addEventListener('input', (e) => {
-            $('background-color-text').value = e.target.value;
-            saveSettings();
-        });
-        $('background-color-text').addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (/^#[0-9A-F]{6}$/i.test(value)) {
-                $('background-color').value = value;
-                saveSettings();
-            }
-        });
         $('save-preset').addEventListener('click', () => {
             // Save current color as preset (could extend to save to settings)
             alert('Preset saved! (Feature can be extended to save multiple presets)');

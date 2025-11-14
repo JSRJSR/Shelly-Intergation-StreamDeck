@@ -1,25 +1,20 @@
-import { ActionSettings } from '../types';
-import { generateColoredIcon, getActionIconPath } from './icon-generator';
+import { ToggleActionSettings } from '../types';
+import { getActionIconPath } from './icon-generator';
 
 /**
- * Helper function to update button icon with custom colors
+ * Helper function to update button icon
  * @param action The action instance (has setImage method)
  * @param actionUUID The UUID of the action
- * @param settings The action settings containing iconColor and backgroundColor
+ * @param settings The action settings
  * @param state Optional state index for multi-state actions
  */
 export async function updateButtonIcon(
   action: any,
   actionUUID: string,
-  settings: ActionSettings,
+  settings: ToggleActionSettings,
   state?: number
 ): Promise<void> {
   try {
-    // Only update if colors are specified
-    if (!settings.iconColor && !settings.backgroundColor) {
-      return;
-    }
-
     const iconPath = getActionIconPath(actionUUID);
     
     // For toggle action, use state-specific icons
@@ -28,25 +23,13 @@ export async function updateButtonIcon(
         'imgs/actions/toggle-off.png',
         'imgs/actions/toggle-on.png'
       ];
-      if (stateIcons[state]) {
-        const coloredIcon = await generateColoredIcon(
-          stateIcons[state],
-          settings.iconColor,
-          settings.backgroundColor
-        );
-        if (action.setImage) {
-          await action.setImage(coloredIcon, state);
-        }
+      if (stateIcons[state] && action.setImage) {
+        await action.setImage(stateIcons[state], state);
       }
     } else {
       // For single-state actions
-      const coloredIcon = await generateColoredIcon(
-        iconPath,
-        settings.iconColor,
-        settings.backgroundColor
-      );
       if (action.setImage) {
-        await action.setImage(coloredIcon);
+        await action.setImage(iconPath);
       }
     }
   } catch (error) {

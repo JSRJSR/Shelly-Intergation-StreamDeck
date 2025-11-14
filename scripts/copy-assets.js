@@ -11,7 +11,7 @@ const uiDir = path.join(pluginFolder, 'ui');
 const manifestPath = path.join(__dirname, '../manifest.json');
 const pluginJsPath = path.join(__dirname, '../dist/plugin.js');
 const assetsDir = path.join(__dirname, '../assets');
-const propertyInspectorDir = path.join(__dirname, '../dist/property-inspector');
+const propertyInspectorDir = path.join(__dirname, '../src/property-inspector');
 
 // Create plugin folder structure
 [pluginFolder, binDir, imgsDir, uiDir].forEach(dir => {
@@ -62,6 +62,12 @@ if (fs.existsSync(bundledPluginPath)) {
 } else {
   console.error('Error: dist/plugin.bundle.js not found! Run "npm run build" first.');
   process.exit(1);
+}
+
+// Copy manifest.json to bin/ as well (Stream Deck SDK may look for it there)
+if (fs.existsSync(manifestPath)) {
+  fs.copyFileSync(manifestPath, path.join(binDir, 'manifest.json'));
+  console.log('✓ manifest.json copied to bin/ (for SDK manifest lookup)');
 }
 
 // Copy source map if it exists

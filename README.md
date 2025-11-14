@@ -84,7 +84,7 @@ Icons should be PNG format and properly sized for Stream Deck display.
 ### Device Setup
 
 1. Add a Shelly action to your Stream Deck
-2. Open the property inspector (gear icon)
+2. Open the Property Inspector (gear icon)
 3. Enter your device's IP address
 4. Select the device type (Shelly Plus 1 or Shelly Plus RGBW PM)
 5. Configure component ID (default: 0)
@@ -107,6 +107,18 @@ The plugin uses the Shelly Gen2 RPC API:
 - **Switch Control**: `http://<device_ip>/rpc/Switch.Set`
 - **Light Control**: `http://<device_ip>/rpc/Light.Set`
 - **Status**: `http://<device_ip>/rpc/<Component>.GetStatus`
+
+## Documentation
+
+This plugin was developed using the following documentation resources:
+
+### Shelly API Documentation
+- **[Shelly Gen2 API](https://shelly-api-docs.shelly.cloud/gen2/)** - Complete reference for Shelly Gen2 devices and RPC API methods
+- **[Shelly Gen1 API](https://shelly-api-docs.shelly.cloud/gen1/#shelly-family-overview)** - Reference for Shelly Gen1 device family overview and API
+
+### Stream Deck SDK Documentation
+- **[Stream Deck SDK Getting Started](https://docs.elgato.com/streamdeck/sdk/introduction/getting-started)** - Introduction to developing Stream Deck plugins
+- **[Stream Deck CLI](https://docs.elgato.com/streamdeck/cli/intro)** - Command-line interface for building and managing Stream Deck plugins
 
 ## Troubleshooting
 

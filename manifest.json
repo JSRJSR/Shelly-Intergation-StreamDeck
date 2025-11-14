@@ -44,70 +44,13 @@
       ]
     },
     {
-      "Name": "Turn On",
-      "UUID": "com.shelly.on",
-      "Icon": "imgs/actions/on",
-      "Tooltip": "Turn Shelly device on",
-      "PropertyInspectorPath": "ui/index.html",
+      "Name": "Test Gen1 Switch",
+      "UUID": "com.shelly.test-gen1-light",
+      "Icon": "imgs/actions/toggle",
+      "Tooltip": "Test Gen1 Shelly switch toggle (hardcoded IP: 192.168.77.4)",
       "States": [
         {
-          "Image": "imgs/actions/on",
-          "TitleAlignment": "middle",
-          "FontSize": 16
-        }
-      ]
-    },
-    {
-      "Name": "Turn Off",
-      "UUID": "com.shelly.off",
-      "Icon": "imgs/actions/off",
-      "Tooltip": "Turn Shelly device off",
-      "PropertyInspectorPath": "ui/index.html",
-      "States": [
-        {
-          "Image": "imgs/actions/off",
-          "TitleAlignment": "middle",
-          "FontSize": 16
-        }
-      ]
-    },
-    {
-      "Name": "Dimming",
-      "UUID": "com.shelly.dimming",
-      "Icon": "imgs/actions/dimming",
-      "Tooltip": "Control brightness/dimming",
-      "PropertyInspectorPath": "ui/index.html",
-      "States": [
-        {
-          "Image": "imgs/actions/dimming",
-          "TitleAlignment": "middle",
-          "FontSize": 16
-        }
-      ]
-    },
-    {
-      "Name": "RGBW Color",
-      "UUID": "com.shelly.rgbw",
-      "Icon": "imgs/actions/rgbw",
-      "Tooltip": "Control RGBW color",
-      "PropertyInspectorPath": "ui/rgbw-picker.html",
-      "States": [
-        {
-          "Image": "imgs/actions/rgbw",
-          "TitleAlignment": "middle",
-          "FontSize": 16
-        }
-      ]
-    },
-    {
-      "Name": "Status",
-      "UUID": "com.shelly.status",
-      "Icon": "imgs/actions/status",
-      "Tooltip": "Display device status",
-      "PropertyInspectorPath": "ui/index.html",
-      "States": [
-        {
-          "Image": "imgs/actions/status",
+          "Image": "imgs/actions/toggle",
           "TitleAlignment": "middle",
           "FontSize": 16
         }

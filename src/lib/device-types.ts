@@ -1,5 +1,3 @@
-import { DeviceConfig } from '../types';
-
 export const DEVICE_TYPES = {
   SHELLY_PLUS_1: 'shelly-plus-1',
   SHELLY_PLUS_RGBW_PM: 'shelly-plus-rgbw-pm',
